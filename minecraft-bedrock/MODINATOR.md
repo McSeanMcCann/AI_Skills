@@ -98,4 +98,28 @@ The 6-file entity pipeline with perfectly matched string identifiers is the blac
 - **Minecraft scripts:** JavaScript (Script API, pre-written templates)
 - **BlockBench plugin:** JavaScript (BlockBench plugin API)
 - **Project store:** JSON files in `C:\AI_Projects\Minecraft_Tools\Projects\`
-- **UI framework:** TBD (tkinter for speed, or a lightweight web framework)
+- **UI framework:** tkinter (`modinator/ui.py`, class `ModinatorUI`)
+
+## UI Layout (current)
+- Top bar: title + "Refresh" only (no folder-browse — the project store path is fixed via `get_app_base_dir()`, not user-selectable)
+- Left panel is a `ttk.Notebook` with two tabs:
+  - **"Current Projects"** (default/selected on launch) — scans live `com.mojang` packs
+  - **"Local Projects"** — the app's own clean project store
+- Item editor → Animations tab → Animation States is an FSM editor (state list + scrollable detail pane with animation/blend/transitions)
+
+## tkinter Gotcha: Listbox `exportselection`
+`tk.Listbox` defaults to `exportselection=True`, which clears its own selection whenever
+another widget (e.g. a `ttk.Combobox` or `Entry`) claims the text selection. In a
+master/detail layout — a listbox on the left driving an editable detail pane on the
+right — this fires `<<ListboxSelect>>` with an empty `curselection()` as soon as the
+user clicks into a field in the detail pane, kicking them back to the "select something"
+placeholder. **Always pass `exportselection=False` to any `tk.Listbox` that drives an
+editable detail panel** (see `anim_states_listbox` in `ui.py`).
+
+## Building the .exe
+- Built via PyInstaller from `Modinator.spec` (entry point `modinator_launcher.py`)
+- Rebuild with: `python -m PyInstaller Modinator.spec --noconfirm` from `Minecraft_Tools/`
+- **Close any running `Modinator.exe` first** — PyInstaller can't overwrite locked DLLs in `dist/Modinator/_internal/` and will fail with `PermissionError: Access is denied`
+- Output to run: `dist\Modinator\Modinator.exe` — this is the one to launch/distribute
+- `build\Modinator\` is PyInstaller's intermediate cache only — never launch from there
+- The exe is a frozen snapshot: rebuild after every source change to `modinator/` or the running app will show stale UI/behavior
